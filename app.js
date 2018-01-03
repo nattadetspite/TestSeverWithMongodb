@@ -20,11 +20,11 @@ const dishes = require('./models/dishes.js');
 
 const url = `mongodb://localhost:27017/conFusion`;
 const connect = mongoose.connect(url, {
-    useMongoClient: true,
+  useMongoClient: true,
 });
 
 connect.then((db) => {
-    console.log('connect correctly to a Server');
+  console.log('connect correctly to a Server');
 }, (err) => { console.log(err); });
 
 var app = express();
@@ -47,42 +47,27 @@ app.use(session({
   store: new FileStore()
 }));
 
-function auth (req, res, next) {
-    console.log(req.session);
+app.use('/', index);
+app.use('/users', users);
 
-    if (!req.session.user) {
-        var authHeader = req.headers.authorization;
-        if (!authHeader) {
-            var err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            next(err);
-            return;
-        }
-        var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
-        var user = auth[0];
-        var pass = auth[1];
-        if (user == 'admin' && pass == 'password') {
-            req.session.user = 'admin';
-            next(); // authorized
-        } else {
-            var err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            next(err);
-        }
+function auth (req, res, next) {
+  console.log(req.session);
+  
+  if (!req.session.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    return next(err);
+  }
+  else {
+    if (req.session.user === 'authenticated') {
+      next();
     }
     else {
-        if (req.session.user === 'admin') {
-            console.log('req.session: ',req.session);
-            next();
-        }
-        else {
-            var err = new Error('You are not authenticated!');
-            err.status = 401;
-            next(err);
-        }
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
     }
+  }
 }
 
 app.use(auth);
